@@ -25,18 +25,8 @@ void setup()
 
 void loop()
 {
-  setupMexico();
-  if (Serial.available() > 0) {
-    String bufferString = "";                     //Declaración de variable para buffer
-    while (Serial.available() > 0) {
-      bufferString += (char)Serial.read();
-    }
-    Serial.println(bufferString);                //Impresión del buffer de forma Serial
-    color = bufferString;
-    colorInicial(color);
-  }
+  DetectarConfiguracion();
   setColor(edoNormalR, edoNormalG, edoNormalB);                        //Se inicializa el LED prendido en verde
-
   float  val = analogRead(sensorPin);
   float mv = ( val / 1024.0) * 5000;
   float cel = mv / 10;
@@ -45,12 +35,14 @@ void loop()
   delay(1000);                                //Tiempo que tarda en aparecer los valores de la temperatura
 
   while (cel >= limiteTemperaturaAdvertencia) {
+    DetectarConfiguracion();
     while (cel >= limiteTemperaturaFallo) {
+      DetectarConfiguracion();
       val = analogRead(sensorPin);
       mv = ( val / 1024.0) * 5000;
       cel = mv / 10;
       setColor(edoTempFR, edoTempFG, edoTempFB); // Cyan
-      Serial.println("Ya llego a 40");
+      Serial.println("Se esta superando el estado de Fallo >" + limiteTemperaturaFallo);
       Serial.println(cel);
       delay(1000);
     }
@@ -58,7 +50,7 @@ void loop()
     mv = ( val / 1024.0) * 5000;
     cel = mv / 10;
     setColor(edoTempR, edoTempG, edoTempB); // Red
-    Serial.println("Ya llego a 30");
+    Serial.println("Se esta superando el estado de Advertencia >" + limiteTemperaturaFallo);
     Serial.println(cel);
     delay(1000);
   }
@@ -72,19 +64,18 @@ void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
 }
 
 void colorInicial(String color2) {
-  setColor(0, 255, 0); // Green
-
+  setColor(edoNormalR, edoNormalG, edoNormalB); // Green
   if (color2.equals(modoconfig)) {
     bool flag = true;
     while (flag) {
-      if (Serial.available() > 0) {
-        //Se crea una variable que servirá como buffer
-        char input = Serial.read();
-        if (input == '1') {
-          setupMexico();
-          flag = false;
-        }
-      }
+
+      //Se crea una variable que servirá como buffer
+
+
+      setupMexico();
+      flag = false;
+
+
     }
 
 
@@ -95,63 +86,56 @@ void setupMexico() {
 
 
   setColor(0, 0, 0); // Green
+MainConfig:
   Serial.println("Bienvenido a el modo de configuración");
-  Serial.println("------------------------------------");
+  Serial.println("-----------------------------------------------------");
   Serial.println("1.- Cambiar el color de los diferentes estados");
   Serial.println("2.- Cambiar los valores limites de temperatura");
   Serial.println("3.- Cambiar la frase para entrar a el modo de configuración");
-
-
+  Serial.println("4.- Salir del modo de configuración");
+  Serial.println("-----------------------------------------------------");
   bool selection = true;
   bool configuracion = true;
   bool internalConfiguracion = true;
   while (selection) {
-    unsigned long currentMillis = millis();
-    //Serial.println(currentMillis - previousMillis);
-    if (currentMillis - previousMillis >= interval) {
-      // save the last time you blinked the LED
-      previousMillis = currentMillis;
-
-      digitalWrite(13, !digitalRead(13));
-      digitalWrite(12, !digitalRead(12));
-      digitalWrite(11, !digitalRead(11));
-    }
+    ParpadeoConfiguracion();
 
     if (Serial.available() > 0) {
 
       int    input = Serial.read();
       if (input == '1') {
-
+SeleccionDeEstados:
         Serial.println("CONFIGURACIÓN PARA CAMBIAR EL COLOR DE LOS ESTADOS");
-        Serial.println("-------------------------------------");
+        Serial.println("--------------------------------------------------");
         Serial.println("Seleccione el estado que desea configurar");
         Serial.println("1.-Estado Normal");
         Serial.println("2.-Estado de advertencia");
         Serial.println("3.-Estado de emergencia");
+        Serial.println("4.-Salir de la configuración del LED");
+        Serial.println("--------------------------------------------------");
+        configuracion = true;
         while (configuracion) {
+          ParpadeoConfiguracion();
           if (Serial.available() > 0) {
             int entrada = Serial.read();
             if (entrada == '1') {
               mostrarColores();
               while (internalConfiguracion) {
+                ParpadeoConfiguracion();
                 if (Serial.available() > 0) {
                   int entrada = Serial.read();
                   if (entrada == '1') {
                     edoNormalR = 0, edoNormalG = 255, edoNormalB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
+                    goto SeleccionDeEstados;
                   } else if (entrada == '2') {
                     edoNormalR = 255, edoNormalG = 255, edoNormalB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
+                    goto SeleccionDeEstados;
                   } else if (entrada == '3') {
                     edoNormalR = 255, edoNormalG = 0, edoNormalB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
-                  } else {
+                    goto SeleccionDeEstados;
+                  }
+                  else
+                  {
                     Serial.println("Seleccione un color válido, por favor");
                   }
                 }
@@ -160,23 +144,19 @@ void setupMexico() {
             } else if (entrada == '2') {
               mostrarColores();
               while (internalConfiguracion) {
+                ParpadeoConfiguracion();
                 if (Serial.available() > 0) {
                   int entrada = Serial.read();
                   if (entrada == '1') {
                     edoTempR = 0, edoTempG = 255, edoTempB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
+                    goto SeleccionDeEstados;
+
                   } else if (entrada == '2') {
                     edoTempR = 255, edoTempG = 255, edoTempB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
+                    goto SeleccionDeEstados;
                   } else if (entrada == '3') {
                     edoTempR = 255, edoTempG = 0, edoTempB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
+                    goto SeleccionDeEstados;
                   } else {
                     Serial.println("Seleccione un color válido, por favor");
                   }
@@ -186,29 +166,26 @@ void setupMexico() {
             } else if (entrada == '3') {
               mostrarColores();
               while (internalConfiguracion) {
+                ParpadeoConfiguracion();
                 if (Serial.available() > 0) {
                   int entrada = Serial.read();
                   if (entrada == '1') {
                     edoTempFR = 0, edoTempFG = 255, edoTempFB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
+                    goto SeleccionDeEstados;
                   } else if (entrada == '2') {
                     edoTempFR = 255, edoTempFG = 255, edoTempFB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
+                    goto SeleccionDeEstados;
                   } else if (entrada == '3') {
                     edoTempFR = 255, edoTempFG = 0, edoTempFB = 255;
-                    internalConfiguracion = false;
-                    configuracion = false;
-                    selection = false;
+                    goto SeleccionDeEstados;
                   } else {
                     Serial.println("Seleccione un color válido, por favor");
                   }
                 }
               }
-              configuracion = false;
+            } else if (entrada == '4') {
+              goto MainConfig;
+
             }
           }
         }
@@ -217,18 +194,24 @@ void setupMexico() {
 
       else if (input == '2') {
         int    input = Serial.read();
+SeleccionDeTemperaturas:
         Serial.println("CONFIGURACIÓN PARA CAMBIAR EL LÍMITE DE LAS TEMPERATURAS");
-        Serial.println("-------------------------------------");
+        Serial.println("-------------------------------------------------------------------------");
         Serial.println("Seleccione la temperatura que desea cambiar su límite de temperatura");
         Serial.println("1.-Temperatura de estado de emergencia");
         Serial.println("2.-Temperatura de estado de fallo");
+        Serial.println("3.-Salir de la configuración de temperaturas");
+        Serial.println("-------------------------------------------------------------------------");
+        internalConfiguracion = true;
         while (configuracion) {
+          ParpadeoConfiguracion();
           if (Serial.available() > 0) {
             int entrada = Serial.read();
             if (entrada == '1') {
               Serial.println("Introduzca el valor limite para el estado de advertencia");
               String bufferString = "";                     //Declaración de variable para buffer
               while (internalConfiguracion) {
+                ParpadeoConfiguracion();
                 if (Serial.available() > 0) {
                   while (Serial.available() > 0) {
                     bufferString += (char)Serial.read();
@@ -240,14 +223,13 @@ void setupMexico() {
               }
               int valorFinal = bufferString.toInt();
               limiteTemperaturaAdvertencia = valorFinal;
-              Serial.println(valorFinal);
-              configuracion = false;
-              internalConfiguracion = false;
-              selection = false;
+              Serial.println(valorFinal + "PUTITO");
+              goto SeleccionDeTemperaturas;
             } else if (entrada == '2') {
               Serial.println("Introduzca el valor limite para el estado de fallo");
               String bufferString = "";                     //Declaración de variable para buffer
               while (internalConfiguracion) {
+                ParpadeoConfiguracion();
                 if (Serial.available() > 0) {
                   while (Serial.available() > 0) {
                     bufferString += (char)Serial.read();
@@ -260,11 +242,13 @@ void setupMexico() {
               int valorFinal = bufferString.toInt();
               limiteTemperaturaFallo = valorFinal;
               Serial.println(valorFinal);
-              configuracion = false;
-              internalConfiguracion = false;
-              selection = false;
+              goto SeleccionDeTemperaturas;
+            } else if (entrada == '3') {
+              goto MainConfig;
+            } else {
+              Serial.print("Digite una cantidad válida");
             }
-            configuracion = false;
+            // configuracion = false;
           }
         }
 
@@ -276,37 +260,36 @@ void setupMexico() {
 
         int contadorInterno = 0;
         Serial.println("CONFIGURACIÓN PARA CAMBIAR LA PALABRA PARA PODER ACCEDER AL MODO DE CONFIGURACIÓN");
-        Serial.println("-------------------------------------");
-        Serial.println("A continuación escriba la palabra que desea utilizar para acceder a el modo de configuración");
+        Serial.println("---------------------------------------------------------------------------------------------");
+        Serial.println("A continuación escriba la palabra que desea utilizar para acceder a el modo de configuración"):
+        Serial.println("---------------------------------------------------------------------------------------------");
         String bufferString = "";
         char regres;
         while (internalConfiguracion) {
+          ParpadeoConfiguracion();
           if (Serial.available() > 0) {
             while (Serial.available() > 0) {
               bufferString += (char)Serial.read();
-            //  regres = Serial.read();
-                  String data = Serial.readStringUntil('\n');
-                  
+              //  regres = Serial.read();
+              String data = Serial.readStringUntil('\n');
+              bufferString += data;
+              modoconfig = bufferString;
+              internalConfiguracion = false;
 
-              Serial.println(bufferString+ data + " ES EL MEJOR");
             }
           } else {
-            contadorInterno++;
-         //   Serial.println(regres);
             if (regres == 13) {
-         //   Serial.println(regres);
-             internalConfiguracion = false;
+              //   Serial.println(regres);
             }
           }
         }
-        Serial.println(bufferString);
-        modoconfig = bufferString;
         configuracion = false;
         internalConfiguracion = false;
         selection = false;
+        goto MainConfig;
 
-      } else {
-
+      } else if (input = 4) {
+        selection = false;
       }
 
     }
@@ -335,4 +318,28 @@ void mostrarColores() {
   Serial.println("2.-Blanco");
   Serial.println("3.-Magenta");
 
+}
+void DetectarConfiguracion() {
+  if (Serial.available() > 0) {
+    String bufferString = "";                     //Declaración de variable para buffer
+    while (Serial.available() > 0) {
+      bufferString += (char)Serial.read();
+    }
+    Serial.println(bufferString);                //Impresión del buffer de forma Serial
+    color = bufferString;
+    colorInicial(color);
+  }
+}
+
+void ParpadeoConfiguracion() {
+  unsigned long currentMillis = millis();
+  //Serial.println(currentMillis - previousMillis);
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
+
+    digitalWrite(13, !digitalRead(13));
+    digitalWrite(12, !digitalRead(12));
+    digitalWrite(11, !digitalRead(11));
+  }
 }
