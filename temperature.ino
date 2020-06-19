@@ -5,11 +5,11 @@ int blue_light_pin = 9;                           //Entrada digital del PIN AZUL
 String color = "";                                //String utilizada para el Modo de configuración
 unsigned long previousMillis = 0;                 // Tiempo previo de Millis para el Blinkeo en Modo configuración, se inicializa en 0
 const long interval = 500;                        // Tiempo de blinkeo del LED cuando entre en Modo configuración
-int edoNormalR = 0, edoNormalG = 255, edoNormalB = 0;
-int edoTempR = 255, edoTempG = 255, edoTempB = 0;
-int edoTempFR = 255, edoTempFG = 0, edoTempFB = 0;
-int limiteTemperaturaAdvertencia = 30, limiteTemperaturaFallo = 40;
-String modoconfig = "xdxd";
+int edoNormalR = 0, edoNormalG = 255, edoNormalB = 0;                    //Variables para el Estado Normal, se inicializa en verde
+int edoTempR = 255, edoTempG = 255, edoTempB = 0;                       ///Variables para el Estado Emergencia, se inicializa en amarillo
+int edoTempFR = 255, edoTempFG = 0, edoTempFB = 0;                      //Variables para el Estado Fallo, se inicializa en verde
+int limiteTemperaturaAdvertencia = 30, limiteTemperaturaFallo = 40;     //Variables para el control de la temperatura, valores 30 y 40   
+String modoconfig = "xdxdxd";                                             //Variable para el modo de configuración, viene por default xdxdxd
 void setup()
 {
   Serial.begin(9600);
@@ -25,24 +25,24 @@ void setup()
 
 void loop()
 {
-  DetectarConfiguracion();
+  DetectarConfiguracion();                                             //Se manda a llamar la función DetectarConfiguración
   setColor(edoNormalR, edoNormalG, edoNormalB);                        //Se inicializa el LED prendido en verde
   float  val = analogRead(sensorPin);
   float mv = ( val / 1024.0) * 5000;
   float cel = mv / 10;
   Serial.print(cel);
   Serial.println(" C");
-  delay(1000);                                //Tiempo que tarda en aparecer los valores de la temperatura
-
+  delay(1000);                                                        //Tiempo que tarda en aparecer los valores de la temperatura
+  //En este ciclo While se accederá una vez que se sobrepasa la temperatura del Estado Normal
   while (cel >= limiteTemperaturaAdvertencia) {
     DetectarConfiguracion();
+    //En este ciclo While se accederá una vez que se sobrepasa la temperatura del Estado Normal
     while (cel >= limiteTemperaturaFallo) {
-      DetectarConfiguracion();
+      DetectarConfiguracion();                                        //Se manda a llamar la función DetectarConfiguración
       val = analogRead(sensorPin);
       mv = ( val / 1024.0) * 5000;
       cel = mv / 10;
       setColor(edoTempFR, edoTempFG, edoTempFB); // Cyan
-      Serial.println("Se esta superando el estado de Fallo >" + limiteTemperaturaFallo);
       Serial.println(cel);
       delay(1000);
     }
@@ -50,17 +50,9 @@ void loop()
     mv = ( val / 1024.0) * 5000;
     cel = mv / 10;
     setColor(edoTempR, edoTempG, edoTempB); // Red
-    Serial.println("Se esta superando el estado de Advertencia >" + limiteTemperaturaFallo);
     Serial.println(cel);
     delay(1000);
   }
-}
-
-void RGB_color(int red_light_value, int green_light_value, int blue_light_value)
-{
-  analogWrite(red_light_pin, red_light_value);
-  analogWrite(green_light_pin, green_light_value);
-  analogWrite(blue_light_pin, blue_light_value);
 }
 
 void colorInicial(String color2) {
@@ -68,14 +60,8 @@ void colorInicial(String color2) {
   if (color2.equals(modoconfig)) {
     bool flag = true;
     while (flag) {
-
-      //Se crea una variable que servirá como buffer
-
-
       setupMexico();
       flag = false;
-
-
     }
 
 
@@ -98,10 +84,8 @@ MainConfig:
   bool configuracion = true;
   bool internalConfiguracion = true;
   while (selection) {
-    ParpadeoConfiguracion();
-
+    ParpadeoConfiguracion();                                                               //Se manda a llamar la función de parpadeo para el modo de configuración
     if (Serial.available() > 0) {
-
       int    input = Serial.read();
       if (input == '1') {
 SeleccionDeEstados:
@@ -115,13 +99,13 @@ SeleccionDeEstados:
         Serial.println("--------------------------------------------------");
         configuracion = true;
         while (configuracion) {
-          ParpadeoConfiguracion();
+          ParpadeoConfiguracion();                                                      //Se manda a llamar la función de parpadeo para el modo de configuración
           if (Serial.available() > 0) {
             int entrada = Serial.read();
             if (entrada == '1') {
-              mostrarColores();
+              mostrarColores();                                                         //Se manda llamar a la función de mostrar colores
               while (internalConfiguracion) {
-                ParpadeoConfiguracion();
+                ParpadeoConfiguracion();                                                //Se manda a llamar la función de parpadeo para el modo de configuración
                 if (Serial.available() > 0) {
                   int entrada = Serial.read();
                   if (entrada == '1') {
@@ -142,9 +126,9 @@ SeleccionDeEstados:
               }
               configuracion = false;
             } else if (entrada == '2') {
-              mostrarColores();
+              mostrarColores();                                                       //Se manda llamar a la función de mostrar colores
               while (internalConfiguracion) {
-                ParpadeoConfiguracion();
+                ParpadeoConfiguracion();                                             //Se manda a llamar la función de parpadeo para el modo de configuración
                 if (Serial.available() > 0) {
                   int entrada = Serial.read();
                   if (entrada == '1') {
@@ -164,9 +148,9 @@ SeleccionDeEstados:
               }
               configuracion = false;
             } else if (entrada == '3') {
-              mostrarColores();
+              mostrarColores();                                                        //Se manda llamar a la función de mostrar colores
               while (internalConfiguracion) {
-                ParpadeoConfiguracion();
+                ParpadeoConfiguracion();                                              //Se manda a llamar la función de parpadeo para el modo de configuración
                 if (Serial.available() > 0) {
                   int entrada = Serial.read();
                   if (entrada == '1') {
@@ -204,14 +188,14 @@ SeleccionDeTemperaturas:
         Serial.println("-------------------------------------------------------------------------");
         internalConfiguracion = true;
         while (configuracion) {
-          ParpadeoConfiguracion();
+          ParpadeoConfiguracion();                                                                      //Se manda a llamar la función de parpadeo para el modo de configuración
           if (Serial.available() > 0) {
             int entrada = Serial.read();
             if (entrada == '1') {
               Serial.println("Introduzca el valor limite para el estado de advertencia");
               String bufferString = "";                     //Declaración de variable para buffer
               while (internalConfiguracion) {
-                ParpadeoConfiguracion();
+                ParpadeoConfiguracion();                                                               //Se manda a llamar la función de parpadeo para el modo de configuración
                 if (Serial.available() > 0) {
                   while (Serial.available() > 0) {
                     bufferString += (char)Serial.read();
@@ -229,7 +213,7 @@ SeleccionDeTemperaturas:
               Serial.println("Introduzca el valor limite para el estado de fallo");
               String bufferString = "";                     //Declaración de variable para buffer
               while (internalConfiguracion) {
-                ParpadeoConfiguracion();
+                ParpadeoConfiguracion();                                                              //Se manda a llamar la función de parpadeo para el modo de configuración
                 if (Serial.available() > 0) {
                   while (Serial.available() > 0) {
                     bufferString += (char)Serial.read();
@@ -261,12 +245,12 @@ SeleccionDeTemperaturas:
         int contadorInterno = 0;
         Serial.println("CONFIGURACIÓN PARA CAMBIAR LA PALABRA PARA PODER ACCEDER AL MODO DE CONFIGURACIÓN");
         Serial.println("---------------------------------------------------------------------------------------------");
-        Serial.println("A continuación escriba la palabra que desea utilizar para acceder a el modo de configuración"):
+        Serial.println("A continuación escriba la palabra que desea utilizar para acceder a el modo de configuración");
         Serial.println("---------------------------------------------------------------------------------------------");
         String bufferString = "";
         char regres;
         while (internalConfiguracion) {
-          ParpadeoConfiguracion();
+          ParpadeoConfiguracion();                                                            //Se manda a llamar la función de parpadeo para el modo de configuración
           if (Serial.available() > 0) {
             while (Serial.available() > 0) {
               bufferString += (char)Serial.read();
@@ -311,6 +295,7 @@ void setColor(int red, int green, int blue)
 }
 
 
+//Esta función lo que realiza es mostrar los posibles colores para configurar el LED
 void mostrarColores() {
   Serial.println("-------------------------------");
   Serial.println("Seleccione el color que desea establecer para el estado del LED");
@@ -319,6 +304,7 @@ void mostrarColores() {
   Serial.println("3.-Magenta");
 
 }
+//Esta funcipon lo que realiza es ciclarse para estar siempre detectando de forma serial que se cumpla la cadena para poder acceder al modo de configuración
 void DetectarConfiguracion() {
   if (Serial.available() > 0) {
     String bufferString = "";                     //Declaración de variable para buffer
@@ -330,7 +316,7 @@ void DetectarConfiguracion() {
     colorInicial(color);
   }
 }
-
+//Esta función lo que realiza es hacer que el parpade para avisarle al usuario de que esta en modo de configuración
 void ParpadeoConfiguracion() {
   unsigned long currentMillis = millis();
   //Serial.println(currentMillis - previousMillis);
