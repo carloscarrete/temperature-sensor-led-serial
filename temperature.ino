@@ -4,12 +4,19 @@ int green_light_pin = 10;                         //Entrada digital del PIN VERD
 int blue_light_pin = 9;                           //Entrada digital del PIN AZUL
 String color = "";                                //String utilizada para el Modo de configuración
 unsigned long previousMillis = 0;                 // Tiempo previo de Millis para el Blinkeo en Modo configuración, se inicializa en 0
+unsigned long previoMillis = 0 ;                   //Estado normal para evitar el delay()
 const long interval = 500;                        // Tiempo de blinkeo del LED cuando entre en Modo configuración
+const long intervalo = 1000;                      //El tiempo del parpadeo
 int edoNormalR = 0, edoNormalG = 255, edoNormalB = 0;                    //Variables para el Estado Normal, se inicializa en verde
 int edoTempR = 255, edoTempG = 255, edoTempB = 0;                       ///Variables para el Estado Emergencia, se inicializa en amarillo
 int edoTempFR = 255, edoTempFG = 0, edoTempFB = 0;                      //Variables para el Estado Fallo, se inicializa en verde
-int limiteTemperaturaAdvertencia = 30, limiteTemperaturaFallo = 40;     //Variables para el control de la temperatura, valores 30 y 40   
+int limiteTemperaturaAdvertencia = 30, limiteTemperaturaFallo = 40;     //Variables para el control de la temperatura, valores 30 y 40
 String modoconfig = "xdxdxd";                                             //Variable para el modo de configuración, viene por default xdxdxd
+bool cambioColor = true;
+float val = 0;
+float mv = 0;
+float cel = 0;
+int contador = 0;
 void setup()
 {
   Serial.begin(9600);
@@ -25,33 +32,36 @@ void setup()
 
 void loop()
 {
-  DetectarConfiguracion();                                             //Se manda a llamar la función DetectarConfiguración
-  setColor(edoNormalR, edoNormalG, edoNormalB);                        //Se inicializa el LED prendido en verde
-  float  val = analogRead(sensorPin);
-  float mv = ( val / 1024.0) * 5000;
-  float cel = mv / 10;
-  Serial.print(cel);
-  Serial.println(" C");
-  delay(1000);                                                        //Tiempo que tarda en aparecer los valores de la temperatura
+  //DetectarConfiguracion();                                             //Se manda a llamar la función DetectarConfiguración
+  //setColor(edoNormalR, edoNormalG, edoNormalB);                        //Se inicializa el LED prendido en verde
+  EstadoNormal();
+  //Tiempo que tarda en aparecer los valores de la temperatura
   //En este ciclo While se accederá una vez que se sobrepasa la temperatura del Estado Normal
   while (cel >= limiteTemperaturaAdvertencia) {
-    DetectarConfiguracion();
-    //En este ciclo While se accederá una vez que se sobrepasa la temperatura del Estado Normal
-    while (cel >= limiteTemperaturaFallo) {
-      DetectarConfiguracion();                                        //Se manda a llamar la función DetectarConfiguración
+    unsigned long currentMillis = millis();
+    setColor(edoTempR, edoTempG, edoTempB); // Yellow
+    if (currentMillis - previoMillis >= intervalo) {
+      DetectarConfiguracion();
+      previoMillis = currentMillis;
       val = analogRead(sensorPin);
       mv = ( val / 1024.0) * 5000;
       cel = mv / 10;
-      setColor(edoTempFR, edoTempFG, edoTempFB); // Cyan
-      Serial.println(cel);
-      delay(1000);
+      Serial.print(cel);
+      Serial.println(" C");
     }
-    val = analogRead(sensorPin);
-    mv = ( val / 1024.0) * 5000;
-    cel = mv / 10;
-    setColor(edoTempR, edoTempG, edoTempB); // Red
-    Serial.println(cel);
-    delay(1000);
+    while (cel >= limiteTemperaturaFallo) {
+      unsigned long currentMillis = millis();
+      setColor(edoTempFR, edoTempFG, edoTempFB); // RED
+      if (currentMillis - previoMillis >= intervalo) {
+        DetectarConfiguracion();
+        previoMillis = currentMillis;
+        val = analogRead(sensorPin);
+        mv = ( val / 1024.0) * 5000;
+        cel = mv / 10;
+        Serial.print(cel);
+        Serial.println(" C  FAL");
+      }
+    }
   }
 }
 
@@ -240,7 +250,6 @@ SeleccionDeTemperaturas:
 
       } else if (input == '3') {
         int    input = Serial.read();
-        Serial.println(Serial.read());
 
         int contadorInterno = 0;
         Serial.println("CONFIGURACIÓN PARA CAMBIAR LA PALABRA PARA PODER ACCEDER AL MODO DE CONFIGURACIÓN");
@@ -319,13 +328,42 @@ void DetectarConfiguracion() {
 //Esta función lo que realiza es hacer que el parpade para avisarle al usuario de que esta en modo de configuración
 void ParpadeoConfiguracion() {
   unsigned long currentMillis = millis();
-  //Serial.println(currentMillis - previousMillis);
   if (currentMillis - previousMillis >= interval) {
-    // save the last time you blinked the LED
     previousMillis = currentMillis;
 
-    digitalWrite(13, !digitalRead(13));
-    digitalWrite(12, !digitalRead(12));
-    digitalWrite(11, !digitalRead(11));
+    cambioColor = !cambioColor;
+    if (cambioColor == true) {
+      setColor(255, 255, 255);
+    } else {
+      setColor(0, 0, 0);
+    }
   }
+}
+
+void EstadoNormal() {
+  unsigned long currentMillis = millis();
+  //Serial.println("------");
+  //Serial.println(contador);
+  //Serial.println("-------");
+
+  if (currentMillis - previoMillis >= intervalo) {
+    DetectarConfiguracion();
+    cambioColor = !cambioColor;
+    //Serial.println(cambioColor);
+    //  Serial.println(cambioColor);
+    previoMillis = currentMillis;
+    if (cambioColor == true) {
+      setColor(edoNormalR, edoNormalG, edoNormalB);
+    } else {
+      setColor(0, 0, 0);
+    }
+
+    val = analogRead(sensorPin);
+    mv = ( val / 1024.0) * 5000;
+    cel = mv / 10;
+    Serial.print(cel);
+    Serial.println(" C");
+  }
+
+
 }
