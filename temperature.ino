@@ -30,6 +30,7 @@ void setup()
 
 }
 
+
 void loop()
 {
   //DetectarConfiguracion();                                             //Se manda a llamar la función DetectarConfiguración
