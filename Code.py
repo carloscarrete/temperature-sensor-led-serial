@@ -11,8 +11,8 @@ from email.mime.multipart import MIMEMultipart
 
 arduino = serial.Serial('/dev/ttyS1',baudrate=9600,timeout=1.0)
 
-account_sid = 'ACdad7e74d2bb428de0dabc9a2388e9634'
-auth_token = 'c53bef9c3023a30afafa810fedf14eee'
+account_sid = 'NOP'
+auth_token = 'MOP'
 client = Client(account_sid, auth_token)
 
 temperatura = 0
